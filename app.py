@@ -1,6 +1,8 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS, cross_origin
 
 app = Flask(__name__)
+cors = CORS(app)
 
 
 #############################################################
@@ -16,6 +18,7 @@ def api_root():
 # 	Returns links of all images uploaded with this service
 #############################################################
 @app.route("/generate",  methods=['POST'])
+@cross_origin()
 def parse_doc():
 	content = request.json
 	
@@ -30,4 +33,4 @@ def parse_doc():
 
 
 if __name__ == '__main__':
-	app.run(ssl_context='adhoc')
+	app.run()
