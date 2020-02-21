@@ -12,7 +12,7 @@ def api_root():
   return "Malloci API"
 
 #############################################################
-# POST /parse
+# POST /generate
 # 	Returns links of all images uploaded with this service
 #############################################################
 @app.route("/generate",  methods=['POST'])
@@ -30,4 +30,4 @@ def parse_doc():
 
 
 if __name__ == '__main__':
-	app.run()
+	app.run(ssl_context='adhoc')
