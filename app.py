@@ -15,7 +15,7 @@ def api_root():
 # POST /parse
 # 	Returns links of all images uploaded with this service
 #############################################################
-@app.route("/parse",  methods=['POST'])
+@app.route("/generate",  methods=['POST'])
 def parse_doc():
 	content = request.json
 	
