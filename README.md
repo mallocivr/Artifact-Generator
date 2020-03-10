@@ -20,7 +20,8 @@ pip install phrasemachine
 ```
 
 ## Endpoints
-- generate artifacts `POST /generate` 
+`POST /generate` generate artifacts  
+
 **Input JSON**
 POST body [example in this gist.](https://gist.github.com/MGutensohn/8bc8b3ad144674fcf6b415a8dfb8f4ab)
 
