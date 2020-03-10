@@ -3,62 +3,29 @@
 Backend code to generate artifacts from text. Access via an API endpoint. Currently running on Flask.
 
 ## Dependencies
-- Flask
 - Python 3.6
+- Flask, Flask-Cors
+```
+pip install Flask
+pip install flask-cors
+```
+- Spacy
+```
+pip install spacy
+python -m spacy download en_core_web_sm
+```
+- [Phrasemachine](https://github.com/slanglab/phrasemachine)
+```
+pip install phrasemachine
+```
 
 ## Endpoints
 - generate artifacts `POST /generate` 
 **Input JSON**
-```
-{
-    "name": "Exhibit Name",
-    "rooms": [
-        {
-            "name": "Room 1",
-            "subRooms": [],
-            "text": "## Room 1 ..."
-        },
-        {
-            "name": "Room 2",
-            "subRooms": [],
-            "text": "## Room 2 Text ..."
-        },
-        ...
-    ],
-    "text": "..."
-}
-
-```
+POST body [example in this gist.](https://gist.github.com/MGutensohn/8bc8b3ad144674fcf6b415a8dfb8f4ab)
 
 **Return JSON**
-```
-{
-    "name": "Exhibit Name",
-    "rooms": [
-        {
-            "name": "Room 1",
-            "subRooms": [],
-            "text": "## Room 1 ...",
-            "artifacts": [
-            	{'type':'image', 'url':'http://image.png'},
-            	{'type':'text', 'text':'.. artifact text...'},
-            ]
-        },
-        {
-            "name": "Room 2",
-            "subRooms": [],
-            "text": "## Room 2 Text ...",
-            "artifacts": [
-            	{'type':'image', 'url':'http://image2.png'},
-            	{'type':'text', 'text':'.. artifact text...'},
-            ]
-        },
-        ...
-    ],
-    "text": "..."
-}
-
-```
+The returned JSON will have an additional `artifacts` field added to every `room` and `subroom` passed in input.
 
 ## Usage
 
