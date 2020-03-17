@@ -111,7 +111,7 @@ def get_room_artifacts(text):
 
 		## > Block quotes
 		elif span.startswith('>'):
-			artifacts.append(BlockQute(span[2:]))
+			# artifacts.append(BlockQute(span[2:]))
 
 		## Code block
 		elif span.startswith('```'):
@@ -119,13 +119,13 @@ def get_room_artifacts(text):
 			lang = match.group(1)
 			_, end = match.span(1)
 			code = span[end:-3]
-			artifacts.append(CodeBlock(lang, code.strip()))
+			# artifacts.append(CodeBlock(lang, code.strip()))
 
 		## Image ![alt image text](img.jpg)
 		elif span.startswith('!['):
 			alt = re.search('^!\[(.*)\]', span).group(1)
 			src = re.search('\((.*)\)', span).group(1)
-			artifacts.append(Image(src, alt))
+			# artifacts.append(Image(src, alt))
 
 		## WordArt from Text
 		else:
