@@ -112,6 +112,7 @@ def get_room_artifacts(text):
 		## > Block quotes
 		elif span.startswith('>'):
 			# artifacts.append(BlockQute(span[2:]))
+			continue
 
 		## Code block
 		elif span.startswith('```'):
