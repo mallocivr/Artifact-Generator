@@ -96,28 +96,6 @@ def wordartify(text):
 		
 	return artifacts
 
-def split_into_segments(text):
-
-	parts = []
-	in_artifact = False
-	delimeter = "\n\n"
-	start = 0
-
-	lefts = ['>', '```']
-	rights = ['>', '```']
-
-	for i in range(len(text)):
-		
-
-		if text[i:i+2] == delimeter and not in_artifact:
-			if i - start > 0:
-				parts.append(text[start:i])
-			start = i+2
-			i = i+2
-
-
-
-
 
 def get_room_artifacts(text):
 
