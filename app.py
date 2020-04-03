@@ -23,10 +23,10 @@ def parse_doc():
 	content = request.json
 	
 	for room in content['rooms']:
-		room['parsed_artifacts'] = get_room_artifacts(room['text'])
+		room['artifacts'] = get_room_artifacts(room['text'])
 		if 'subRooms' in room:
 			for subroom in room['subRooms']:
-				subroom['parsed_artifacts'] = get_room_artifacts(subroom['text'])
+				subroom['artifacts'] = get_room_artifacts(subroom['text'])
 
 	return jsonify(content), 200
 

@@ -6,7 +6,7 @@ import re
 class BlockQute():
 	type = 'block quote'
 	def __init__(self, text):
-		self.text = text
+		self.text = ' '.join(text.split('\n>'))
 	def dict(self):
 		return {'type':self.type, 'text':self.text}
 

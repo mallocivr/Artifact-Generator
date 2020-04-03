@@ -25,43 +25,43 @@ def merge_spans(spans):
 	# assume spans are ordered, increasing
 	merged = []
 	for span in spans:
-	    if len(merged)==0:
-	        merged.append(span)
-	        continue
-	    
-	    addflag = True
-	    for i in range(len(merged)):
-	        m = merged[i]
-	        
-	        if span[1] < m[0]:
-	            addflag=False
-	            continue
-	        
-	        elif ((span[0] >= m[0] and span[0]<=m[1]) 
-	              or (span[1] >= m[0] and span[1]<=m[1])):
-	            merged[i] = (min(span[0],m[0]), max(span[1],m[1]))
-	            addflag=False
-	            
-	    if addflag:
-	        merged.append(span)
-	        
+		if len(merged)==0:
+			merged.append(span)
+			continue
+		
+		addflag = True
+		for i in range(len(merged)):
+			m = merged[i]
+			
+			if span[1] < m[0]:
+				addflag=False
+				continue
+			
+			elif ((span[0] >= m[0] and span[0]<=m[1]) 
+				  or (span[1] >= m[0] and span[1]<=m[1])):
+				merged[i] = (min(span[0],m[0]), max(span[1],m[1]))
+				addflag=False
+				
+		if addflag:
+			merged.append(span)
+			
 	return merged
 
 def highlight_ner(tokens):
 	""" Highlight named entities """
 	arr = []
 	for t in tokens:
-	    if t.ent_iob_ != 'O':
-	    	# class = t.ent_type_
-	        arr.append(f'<span style="{_ENTITY_}">{t.text}</span>')
-	    else:
-	        arr.append(t.text)
+		if t.ent_iob_ != 'O':
+			# class = t.ent_type_
+			arr.append(f'<span style="{_ENTITY_}">{t.text}</span>')
+		else:
+			arr.append(t.text)
 	
 	text = ' '.join(arr)
 	text = re.sub(r'\s([?.,!"](?:\s|$))', r'\1', text) # remove whitespace before punctuation 
 
 	return text
-    
+	
 
 def to_html(tokens, spans):
 	""" HTML Markup """
@@ -71,66 +71,105 @@ def to_html(tokens, spans):
 		content.append(highlight_ner(tokens))
 	else:
 		for lo,hi in spans:
-		    content.append(highlight_ner(tokens[curr:lo]))
-		    content.append(f'<span style="{_PHRASE_}">{highlight_ner(tokens[lo:hi])}</span>')
-		    curr = hi
+			content.append(highlight_ner(tokens[curr:lo]))
+			content.append(f'<span style="{_PHRASE_}">{highlight_ner(tokens[lo:hi])}</span>')
+			curr = hi
 
 	html = f'<div style="{_SENTENCE_}">{" ".join(content)}</div>'
 	return html
-    
+	
 
 def wordartify(text):
 	doc = nlp(text)
 	artifacts = []
 
 	for sent in doc.sents:
-	    tokens = [token.text for token in sent]
-	    pos = [token.pos_ for token in doc]
-	    res = phrasemachine.get_phrases(tokens=tokens, postags=pos, output="token_spans")
-	    spans = merge_spans(res['token_spans'])
-	    
-	    phrases = [tokens[lo:hi] for lo,hi in spans]
-	    html = to_html([token for token in sent], spans)
+		tokens = [token.text for token in sent]
+		pos = [token.pos_ for token in doc]
+		res = phrasemachine.get_phrases(tokens=tokens, postags=pos, output="token_spans")
+		spans = merge_spans(res['token_spans'])
+		
+		phrases = [tokens[lo:hi] for lo,hi in spans]
+		html = to_html([token for token in sent], spans)
 
-	    artifacts.append(WordArt(html))
-	    
+		artifacts.append(WordArt(html))
+		
 	return artifacts
+
+def split_into_segments(text):
+
+	parts = []
+	in_artifact = False
+	delimeter = "\n\n"
+	start = 0
+
+	lefts = ['>', '```']
+	rights = ['>', '```']
+
+	for i in range(len(text)):
+		
+
+		if text[i:i+2] == delimeter and not in_artifact:
+			if i - start > 0:
+				parts.append(text[start:i])
+			start = i+2
+			i = i+2
+
+
+
 
 
 def get_room_artifacts(text):
 
 	## In markdown different sections are separated by line breaks
-	parts = text.split('\n\n')
+	parts = re.split('\\n.?\\n', text) #text.split('\n\n')
 	artifacts = []
 
-	for span in parts:
+	# for span in parts:
+	i = 0
+	while i < len(parts):
+		span = parts[i].strip()
 
 		## Section Headers
 		if span.startswith('#'):
+			i += 1
 			continue
 
 		## > Block quotes
 		elif span.startswith('>'):
-			# artifacts.append(BlockQute(span[2:]))
-			continue
+			artifacts.append(BlockQute(span[2:]))
+			# continue
 
 		## Code block
 		elif span.startswith('```'):
+			while not span.endswith('```'):
+				i += 1
+				span += '\n\n' + parts[i]
+
 			match = re.search('^```([^\n]*)', span)
 			lang = match.group(1)
 			_, end = match.span(1)
 			code = span[end:-3]
-			# artifacts.append(CodeBlock(lang, code.strip()))
+			artifacts.append(CodeBlock(lang, code.strip()))
+
+		elif '\n```' in span:
+			subsplit = span.split('\n```')
+			artifacts += wordartify(subsplit[0])
+
+			parts[i] = '```' + '\n```'.join(subsplit[1:])
+			continue
 
 		## Image ![alt image text](img.jpg)
 		elif span.startswith('!['):
 			alt = re.search('^!\[(.*)\]', span).group(1)
 			src = re.search('\((.*)\)', span).group(1)
-			# artifacts.append(Image(src, alt))
+			artifacts.append(Image(src, alt))
 
 		## WordArt from Text
 		else:
 			artifacts += wordartify(span)
+
+		i += 1
 
 	return [a.dict() for a in artifacts]
 
