@@ -18,6 +18,10 @@ python -m spacy download en_core_web_sm
 ```
 pip install phrasemachine
 ```
+-scikit-learn
+```
+pip install scikit-learn
+```
 
 ## Endpoints
 `POST /generate` generate artifacts  
@@ -32,10 +36,29 @@ The returned JSON will have an additional `artifacts` field added to every `room
 
 Start app
 ```
-python app.py 
+python main.py 
 ```
 
 Generate artifacts
 ```
 curl -X POST -H "Content-Type: application/json" -d @proposal.json http://127.0.0.1:5000/generate
 ```
+
+
+## Local Endpoint
+
+```
+curl -X POST -H "Content-Type: application/json" -d @proposal.json http://127.0.0.1:8080/generate
+```
+
+## Deplying to google cloud
+```
+gcloud app deploy
+```
+
+## Google Cloud Endpoint
+```
+curl -X POST -H "Content-Type: application/json" -d @test.json https://malloci.uc.r.appspot.com/generate > test.result.json
+```
+
+curl -X POST -H "Content-Type: application/json" -d @test.json http://127.0.0.1:8080/generate

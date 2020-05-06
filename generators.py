@@ -8,11 +8,16 @@ Using phrasemachine (Handler etal, 2016, EMNLP)
 
 import phrasemachine
 import spacy
+from spacy.tokenizer import Tokenizer
 from collections import Counter
 import re
-from artifacts import BlockQute, CodeBlock, Image, WordArt
+from artifacts import BlockQute, CodeBlock, Image, WordArt, Model3D
 
 nlp = spacy.load("en_core_web_sm")
+
+## custom tokenizer to keep **, * intact
+match_re = re.compile(r'''\*{1,2}''')
+nlp.tokenizer = Tokenizer(nlp.vocab, token_match=match_re.match)
 
 _SENTENCE_ = "margin:auto; text-align:center;"
 _PHRASE_ = "font-size:150% !important;"
@@ -53,7 +58,8 @@ def highlight_ner(tokens):
 	for t in tokens:
 		if t.ent_iob_ != 'O':
 			# class = t.ent_type_
-			arr.append(f'<span style="{_ENTITY_}">{t.text}</span>')
+			# arr.append(f'<span style="{_ENTITY_}">{t.text}</span>')
+			arr.append(f'<span class="entity">{t.text}</span>')
 		else:
 			arr.append(t.text)
 	
@@ -61,7 +67,23 @@ def highlight_ner(tokens):
 	text = re.sub(r'\s([?.,!"](?:\s|$))', r'\1', text) # remove whitespace before punctuation 
 
 	return text
-	
+
+def tok_to_text(tokens):
+	arr = [t.text for t in tokens]
+
+	text = ' '.join(arr)
+	text = re.sub(r'\s([?.,!"](?:\s|$))', r'\1', text) # remove whitespace before punctuation 
+
+	return text
+
+def add_markdown_formatting(html):
+	## ** for bold
+	html = re.sub(r'\*\*([^\*]+)\*\*', r'<span class="bold"/>\1</span>', html)
+
+	## * for italic
+	html = re.sub(r'\*([^\*]+)\*', r'<span class="italic"/>\1</span>', html)
+
+	return html
 
 def to_html(tokens, spans):
 	""" HTML Markup """
@@ -71,15 +93,28 @@ def to_html(tokens, spans):
 		content.append(highlight_ner(tokens))
 	else:
 		for lo,hi in spans:
-			content.append(highlight_ner(tokens[curr:lo]))
-			content.append(f'<span style="{_PHRASE_}">{highlight_ner(tokens[lo:hi])}</span>')
+			if lo >= hi:
+				continue
+			content.append(tok_to_text(tokens[curr:lo]))
+
+			# content.append(f'<span style="{_PHRASE_}">{highlight_ner(tokens[lo:hi])}</span>')
+			# text = highlight_ner(tokens[lo:hi])
+			# if len(text) > 0:
+			# 	content.append(f'<span class="emphasize">{text}</span>')
+			
+			text = tok_to_text(tokens[lo:hi])
+			if len(text) > 0:
+				content.append(f'<span class="emphasize">{text}</span>')
 			curr = hi
 
-	html = f'<div style="{_SENTENCE_}">{" ".join(content)}</div>'
+	# html = f'<div style="{_SENTENCE_}">{" ".join(content)}</div>'
+	html = f'<div class="wordart">{" ".join(content).strip()}</div>'
+	html = add_markdown_formatting(html)
 	return html
 	
 
 def wordartify(text):
+
 	doc = nlp(text)
 	artifacts = []
 
@@ -100,18 +135,48 @@ def wordartify(text):
 def get_room_artifacts(text):
 
 	## In markdown different sections are separated by line breaks
-	parts = re.split('\\n.?\\n', text) #text.split('\n\n')
+	# parts = re.split('\\n.?\\n', text) #text.split('\n\n')
+	parts = re.split(u'[\n\u200b\r]+', text)
 	artifacts = []
+
+	hiddenBlock = False
 
 	# for span in parts:
 	i = 0
 	while i < len(parts):
 		span = parts[i].strip()
+		# print(span)
+
+
+		## Hidden Blocks - not shown in VR
+		if not hiddenBlock and span.startswith("~"):
+			hiddenBlock = True
+			i += 1
+			continue
+		elif hiddenBlock and not span.startswith("~"):
+			i += 1
+			continue
+		elif hiddenBlock and span.startswith("~"):
+			hiddenBlock = False
+			i += 1
+			continue
 
 		## Section Headers
 		if span.startswith('#'):
 			i += 1
 			continue
+
+		## Theme (extended syntax)
+		elif span.startswith("$"):
+			i += 1
+			continue
+
+		## Audio
+		## adds audioSrc to the preceeding artifact
+		elif span.startswith("^"):
+			match = re.search('\^\(([^\n]*)\)', span)
+			audioSrc = match.group(1)
+			artifacts[-1].audioSrc = audioSrc
 
 		## > Block quotes
 		elif span.startswith('>'):
@@ -120,9 +185,10 @@ def get_room_artifacts(text):
 
 		## Code block
 		elif span.startswith('```'):
+			# aggregate all lines inside the codeblock
 			while not span.endswith('```'):
 				i += 1
-				span += '\n\n' + parts[i]
+				span += '\n' + parts[i]
 
 			match = re.search('^```([^\n]*)', span)
 			lang = match.group(1)
@@ -142,6 +208,14 @@ def get_room_artifacts(text):
 			alt = re.search('^!\[(.*)\]', span).group(1)
 			src = re.search('\((.*)\)', span).group(1)
 			artifacts.append(Image(src, alt))
+
+		## 3D models &[name](src.GLTF)
+		elif span.startswith("&"):
+			# TODO!
+			name = re.search('^&\[(.*)\]', span).group(1)
+			src = re.search('\((.*)\)', span).group(1)
+			artifacts.append(Model3D(src, name))
+		
 
 		## WordArt from Text
 		else:
