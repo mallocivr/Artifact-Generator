@@ -1,6 +1,6 @@
 Flask==1.1.1
 gunicorn==19.9.0
-flask-cors==3.0.8
+flask-cors==3.0.9
 phrasemachine==1.0.7
 spacy==2.2.2
 https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-2.2.5/en_core_web_sm-2.2.5.tar.gz#en_core_web_sm
